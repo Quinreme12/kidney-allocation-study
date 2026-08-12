@@ -98,19 +98,17 @@ exports.handler = async function(event) {
       .single();
 
     if (error) {
-      console.error("Supabase error:", error);
-
-      return {
-        statusCode: 500,
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          success: false,
-          error: "Database insertion failed"
-        })
-      };
-    }
+  console.error("Supabase error:", error);
+  return {
+    statusCode: 500,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      success: false,
+      error: "Database insertion failed",
+      debug: { message: error.message, details: error.details, hint: error.hint, code: error.code }
+    })
+  };
+}
 
     return {
       statusCode: 200,
