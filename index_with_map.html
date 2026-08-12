@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Allocation Priority Study</title>
+<style>
+  :root {
+    --paper: #F6F4EF;
+    --ink: #1E2A32;
+    --ink-soft: #5B6670;
+    --line: #D8D2C4;
+    --accent: #3F6E64;
+    --accent-soft: #E4EDE9;
+    --record: #FFFFFF;
+    --mono: 'IBM Plex Mono', 'SF Mono', 'Courier New', monospace;
+    --serif: 'Source Serif 4', 'Iowan Old Style', Georgia, serif;
+    --sans: 'Inter', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px 24px;
+  }
+
+  .wrap { width: 100%; max-width: 920px; }
+
+  header {
+    text-align: center;
+    margin-bottom: 8px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 30px;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+
+  .sub {
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    line-height: 1.55;
+    max-width: 560px;
+    margin: 0 auto 6px;
+  }
+
+  .feedback-disclaimer {
+  margin-top: 24px;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+  .disclosure {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    background: var(--accent-soft);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 8px 12px;
+    display: inline-block;
+    margin-top: 14px;
+  }
+
+  .prompt {
+    text-align: center;
+    font-family: var(--serif);
+    font-size: 17px;
+    font-style: italic;
+    color: var(--ink);
+    margin: 34px 0 22px;
+  }
+
+  .donor-line {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 11.5px;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    margin: 0 0 26px;
+  }
+
+  .donor-line span {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .arena {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+    align-items: stretch;
+  }
+
+  .versus {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 42px;
+    height: 42px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    z-index: 2;
+  }
+
+  .card {
+    background: var(--record);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 26px 24px 20px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(30, 42, 50, 0.07);
+  }
+
+  .card.chosen {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .card.faded {
+    opacity: 0.45;
+    pointer-events: none;
+  }
+
+  .card-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 4px;
+  }
+
+  .case-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+
+  .rows { border-top: 1px solid var(--line); margin-top: 4px; }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .row-label {
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  .row-value {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: right;
+  }
+
+  .pick-hint {
+    margin-top: auto;
+    padding-top: 16px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+
+  footer {
+    margin-top: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--line);
+    padding-top: 16px;
+  }
+
+  .count {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .count b { color: var(--ink); }
+
+  .actions { display: flex; gap: 10px; }
+
+  button.util {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    padding: 7px 12px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  button.util:hover { border-color: var(--accent); color: var(--accent); }
+
+
+  .map-wrap {
+    margin: 0 0 28px;
+    background: var(--record);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px 10px;
+  }
+
+  .map-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 2px 4px;
+  }
+
+  .map-legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  #map {
+    width: 100%;
+    height: 330px;
+  }
+
+  #map svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .state {
+    fill: #ECE9E1;
+    stroke: #FFFFFF;
+    stroke-width: 0.7;
+    vector-effect: non-scaling-stroke;
+  }
+
+  .state.donor {
+    fill: #D6C89E;
+  }
+
+  .state.candidate-a {
+    fill: #B8D0C8;
+  }
+
+  .state.candidate-b {
+    fill: #C9C0D0;
+  }
+
+  .route {
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    opacity: 0.9;
+  }
+
+  .route-a { stroke: var(--accent); }
+  .route-b { stroke: #6B5B73; }
+
+  .map-marker {
+    stroke: var(--record);
+    stroke-width: 2;
+  }
+
+  .marker-donor { fill: #8C741E; }
+  .marker-a { fill: var(--accent); }
+  .marker-b { fill: #6B5B73; }
+
+  .marker-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    fill: var(--ink);
+    paint-order: stroke;
+    stroke: var(--record);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+
+  .gate-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.gate-card {
+  width: 100%;
+  max-width: 520px;
+  background: var(--record);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 40px;
+  text-align: center;
+}
+
+.gate-card h1 {
+  margin-bottom: 14px;
+}
+
+.gate-form {
+  margin-top: 28px;
+  text-align: left;
+}
+
+.gate-form label {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 18px 0 7px;
+}
+
+.gate-form input,
+.gate-form select {
+  width: 100%;
+  padding: 11px 12px;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+
+.gate-form input:focus,
+.gate-form select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.begin-button {
+  width: 100%;
+  margin-top: 26px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 3px;
+  background: var(--accent);
+  color: white;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.begin-button:hover {
+  opacity: 0.9;
+}
+
+.gate-error {
+  color: #9B3A32;
+  font-size: 12px;
+  margin-top: 12px;
+  min-height: 16px;
+}
+
+.feedback-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 900;
+}
+
+.feedback-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--record);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 40px;
+  text-align: center;
+}
+
+.feedback-card h1 {
+  margin: 12px 0 14px;
+}
+
+.feedback-card p {
+  max-width: 460px;
+  margin: 0 auto 28px;
+}
+
+.feedback-icon {
+  font-size: 32px;
+  margin-bottom: 10px;
+}
+
+.feedback-comparison {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  margin-bottom: 28px;
+}
+
+.feedback-comparison > div {
+  background: var(--paper);
+  padding: 16px;
+}
+
+.feedback-label {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.feedback-comparison strong {
+  font-family: var(--mono);
+}
+
+  @media (max-width: 640px) {
+    #map { height: 260px; }
+    .map-title { align-items: flex-start; flex-direction: column; }
+    .map-legend { justify-content: flex-start; }
+  }
+
+  @media (max-width: 640px) {
+    .arena { grid-template-columns: 1fr; gap: 40px; }
+    .versus { top: unset; left: 50%; bottom: -30px; transform: translate(-50%, 0); }
+  }
+
+</style>
+</head>
+<body>
+
+<div id="gateScreen" class="gate-screen">
+  <div class="gate-card">
+    <div class="eyebrow">Allocation Priority Study</div>
+
+    <h1>Welcome</h1>
+
+    <p class="sub">
+      Before beginning, please tell us a little about yourself.
+      Your responses will be stored anonymously.
+    </p>
+
+    <div class="gate-form">
+
+      <label for="ageInput">Age</label>
+      <input
+        type="number"
+        id="ageInput"
+        min="18"
+        max="120"
+        placeholder="Age"
+      >
+
+      <label for="occupationInput">Occupation</label>
+      <select id="occupationInput">
+        <option value="">Select an occupation</option>
+        <option value="Medical Student">Medical Student</option>
+        <option value="Clinician">Clinician</option>
+        <option value="Transplant Nephrologist">Transplant Nephrologist</option>
+        <option value="Transplant Surgeon">Transplant Surgeon</option>
+        <option value="Other">Other</option>
+      </select>
+
+      <button id="beginBtn" class="begin-button">
+        Begin study
+      </button>
+
+      <div id="gateError" class="gate-error"></div>
+
+    </div>
+  </div>
+</div>
+
+<div id="feedbackScreen" class="feedback-screen" style="display:none;">
+  <div class="feedback-card">
+
+    <div id="feedbackIcon" class="feedback-icon"></div>
+
+    <div class="eyebrow">Allocation comparison</div>
+
+    <h1 id="feedbackTitle"></h1>
+
+    <p id="feedbackText"></p>
+
+    <div class="feedback-comparison">
+      <div>
+        <span class="feedback-label">Your choice</span>
+        <strong id="feedbackChoice"></strong>
+      </div>
+
+      <div>
+        <span class="feedback-label">Allocation priority</span>
+        <strong id="feedbackPriority"></strong>
+      </div>
+    </div>
+
+    <button id="nextPairBtn" class="begin-button">
+      Next comparison
+    </button>
+
+
+    <div class="sub feedback-disclaimer">
+      <em>
+        Based on a simplified version of OPTN Allocation Policy as on 8/11/26, and under the assumption that donor KDPI = 50, and neither candidates are blood type O and neither highly sensitized or medically urgent.
+      </em>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Allocation Priority Study</div>
+    <h1>Who receives the kidney?</h1>
+    <p class="sub">You'll see two candidates from a transplant waiting list. Review their case details and choose the one you believe should receive higher priority. There's no correct answer — we're studying how people weigh these factors.</p>
+    <div class="disclosure">Responses are stored in a shared, anonymous dataset visible to anyone using this tool.</div>
+  </header>
+
+  <p class="prompt">Case pair <span id="pairNum">1</span> — who should be prioritized?</p>
+  <p class="donor-line">Donor kidney recovered in: <span id="donorState">—</span></p>
+
+<div class="map-wrap">
+    <div class="map-title">
+      <span>Geography of the allocation</span>
+      <span class="map-legend">
+        <span class="legend-item"><span class="legend-dot" style="background:#8C741E"></span>Donor</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span>Candidate A</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#6B5B73"></span>Candidate B</span>
+      </span>
+    </div>
+    <div id="map" aria-label="Map showing donor and candidate states"></div>
+  </div>
+
+  <div class="arena" id="arena">
+    <div class="card" id="cardA" data-side="A">
+      <div class="card-label">Candidate A</div>
+      <div class="case-id" id="idA">CASE —</div>
+      <div class="rows" id="rowsA"></div>
+      <div class="pick-hint">Select this candidate</div>
+    </div>
+    <div class="versus">VS</div>
+    <div class="card" id="cardB" data-side="B">
+      <div class="card-label">Candidate B</div>
+      <div class="case-id" id="idB">CASE —</div>
+      <div class="rows" id="rowsB"></div>
+      <div class="pick-hint">Select this candidate</div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="count">Responses collected: <b id="totalCount">—</b></div>
+    <div class="actions">
+      <button class="util" id="exportBtn">Export CSV</button>
+      <button class="util" id="skipBtn">Skip this pair</button>
+    </div>
+  </footer>
+</div>
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+<script>
+const FIELDS = [
+  { key: 'age', label: 'Age', unit: 'yrs' },
+  { key: 'waitYears', label: 'Time on waiting list', unit: 'yrs' },
+  { key: 'dialysisYears', label: 'Time on dialysis', unit: 'yrs' },
+  { key: 'hlaMismatch', label: 'HLA mismatch', unit: '/ 6' },
+  { key: 'state', label: 'State of residence', unit: '' },
+  { key: 'priorLivingDonor', label: 'Prior living donor', unit: '' },
+  { key: 'listedAsChild', label: 'Listed as a child', unit: '' },
+];
+
+const WEB_APP_URL =
+    "https://script.google.com/macros/s/AKfycbxePpzsJrhMmG2H3SllRAvl5Hf6ovKVL03aPPlpPGaRtXH1Ykw_zlecpy3Bf8bAwv9-/exec";
+
+
+
+let respondent = {
+  age: null,
+  occupation: null
+};
+
+
+// ---------- Map ----------
+let stateFeatures = [];
+let mapSvg = null;
+let mapProjection = null;
+
+async function loadMap() {
+  const us = await d3.json(
+    "https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json"
+  );
+
+  stateFeatures = topojson.feature(us, us.objects.states).features;
+
+  const mapEl = document.getElementById("map");
+  const width = mapEl.clientWidth || 700;
+  const height = mapEl.clientHeight || 330;
+
+  mapSvg = d3.select("#map")
+    .append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`)
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .attr("role", "img")
+    .attr("aria-label", "United States map showing donor and candidate locations");
+
+  mapProjection = d3.geoAlbersUsa()
+    .fitSize([width - 12, height - 12], {
+      type: "FeatureCollection",
+      features: stateFeatures
+    });
+
+  mapSvg.append("g")
+    .attr("class", "states")
+    .selectAll("path")
+    .data(stateFeatures)
+    .join("path")
+    .attr("class", "state")
+    .attr("d", d3.geoPath(mapProjection));
+
+  drawMap();
+}
+
+function findStateFeature(stateName) {
+  return stateFeatures.find(d => d.properties.name === stateName);
+}
+
+function showFeedback(side) {
+
+  const allocationSide =
+    determineAllocationConsistency();
+
+  const feedbackScreen =
+    document.getElementById('feedbackScreen');
+
+  const title =
+    document.getElementById('feedbackTitle');
+
+  const text =
+    document.getElementById('feedbackText');
+
+  const icon =
+    document.getElementById('feedbackIcon');
+
+  const choice =
+    document.getElementById('feedbackChoice');
+
+  const priority =
+    document.getElementById('feedbackPriority');
+
+
+  // Exact tie
+  if (allocationSide === null) {
+
+    icon.textContent = '—';
+
+    title.textContent =
+      'The candidates are tied under this version of the allocation rules.';
+
+    text.textContent =
+      'Neither candidate has higher priority based on the characteristics included in this study.';
+
+    choice.textContent =
+      'Candidate ' + side;
+
+    priority.textContent =
+      'Tie';
+
+  }
+
+
+  // Participant matched allocation
+  else if (side === allocationSide) {
+
+    icon.textContent = '✓';
+
+    title.textContent =
+      'Your choice matched the allocation system.';
+
+    text.textContent =
+      'The candidate you selected would have higher priority under the allocation rules used in this study.';
+
+    choice.textContent =
+      'Candidate ' + side;
+
+    priority.textContent =
+      'Candidate ' + allocationSide;
+
+  }
+
+
+  // Participant differed from allocation
+  else {
+
+    icon.textContent = '×';
+
+    title.textContent =
+      'Your choice differed from the allocation system.';
+
+    text.textContent =
+      'The other candidate would have higher priority under the allocation rules used in this study.';
+
+    choice.textContent =
+      'Candidate ' + side;
+
+    priority.textContent =
+      'Candidate ' + allocationSide;
+  }
+
+
+  feedbackScreen.style.display = 'flex';
+}
+
+
+function determineAllocationConsistency() {
+
+  const candidateA = current.a;
+  const candidateB = current.b;
+  const donorState = current.donorState;
+
+
+  // Get each candidate's allocation classification
+  const classificationA =
+    getAllocationClassification(
+      candidateA,
+      donorState
+    );
+
+  const classificationB =
+    getAllocationClassification(
+      candidateB,
+      donorState
+    );
+
+
+  // Lower classification number = higher priority.
+  if (classificationA < classificationB) {
+    return "A";
+  }
+
+  if (classificationB < classificationA) {
+    return "B";
+  }
+
+
+  // -------------------------------------------------------
+  // Same classification:
+  // sort by total allocation points.
+  // -------------------------------------------------------
+
+  const pointsA =
+    getAllocationPoints(
+      candidateA,
+      donorState
+    );
+
+  const pointsB =
+    getAllocationPoints(
+      candidateB,
+      donorState
+    );
+
+
+  if (pointsA.totalPoints > pointsB.totalPoints) {
+    return "A";
+  }
+
+  if (pointsB.totalPoints > pointsA.totalPoints) {
+    return "B";
+  }
+
+
+  // -------------------------------------------------------
+  // Exact tie.
+  //
+  // We don't currently generate registration timestamps,
+  // so we cannot apply the final policy tiebreaker.
+  // Return null so the feedback screen can handle it.
+  // -------------------------------------------------------
+
+  return null;
+}
+
+function drawMap() {
+  if (!mapSvg || !stateFeatures.length) return;
+
+  const donorState = current.donorState;
+  const candidateAState = current.a.state;
+  const candidateBState = current.b.state;
+
+  // Reset state highlighting.
+  mapSvg.selectAll(".state")
+    .attr("class", "state")
+    .each(function(d) {
+      const el = d3.select(this);
+      const name = d.properties.name;
+      if (name === donorState) el.classed("donor", true);
+      if (name === candidateAState) el.classed("candidate-a", true);
+      if (name === candidateBState) el.classed("candidate-b", true);
+    });
+
+  // If two roles happen to be in the same state, give donor priority for
+  // the fill and rely on the markers/lines to show the roles.
+  if (donorState === candidateAState) {
+    mapSvg.selectAll(".state")
+      .filter(d => d.properties.name === donorState)
+      .attr("class", "state donor");
+  }
+  if (donorState === candidateBState) {
+    mapSvg.selectAll(".state")
+      .filter(d => d.properties.name === donorState)
+      .attr("class", "state donor");
+  }
+
+  const donorFeature = findStateFeature(donorState);
+  const aFeature = findStateFeature(candidateAState);
+  const bFeature = findStateFeature(candidateBState);
+
+  if (!donorFeature || !aFeature || !bFeature) return;
+
+  
+  const donorPoint = mapProjection(d3.geoCentroid(donorFeature));
+  const aPoint = mapProjection(d3.geoCentroid(aFeature));
+  const bPoint = mapProjection(d3.geoCentroid(bFeature));
+
+ 
+// Small offset used when multiple people are in the same state.
+// This keeps the markers visible without making it look like
+// they are in different states.
+  const OFFSET = 5;
+
+  let donorMarker = [...donorPoint];
+  let aMarker = [...aPoint];
+  let bMarker = [...bPoint];
+
+// ---------------------------------------------------------
+// Handle candidates A and B in the same state
+// ---------------------------------------------------------
+  if (candidateAState === candidateBState) {
+    aMarker[0] -= OFFSET;
+    bMarker[0] += OFFSET;
+  } 
+
+// ---------------------------------------------------------
+// Handle donor and Candidate A in the same state
+// ---------------------------------------------------------
+  if (donorState === candidateAState) {
+    donorMarker[1] -= OFFSET;
+    aMarker[1] += OFFSET;
+  }
+
+// ---------------------------------------------------------
+// Handle donor and Candidate B in the same state
+// ---------------------------------------------------------
+  if (donorState === candidateBState) {
+    donorMarker[1] -= OFFSET;
+    bMarker[1] += OFFSET;
+  }
+
+  // Remove old routes and markers before drawing the new pair.
+  mapSvg.selectAll(".map-dynamic").remove();
+
+  const routes = mapSvg.append("g").attr("class", "map-dynamic");
+
+  routes.append("line")
+    .attr("class", "route route-a")
+    .attr("x1", donorPoint[0]).attr("y1", donorPoint[1])
+    .attr("x2", aPoint[0]).attr("y2", aPoint[1]);
+
+  routes.append("line")
+    .attr("class", "route route-b")
+    .attr("x1", donorPoint[0]).attr("y1", donorPoint[1])
+    .attr("x2", bPoint[0]).attr("y2", bPoint[1]);
+
+  const markers = mapSvg.append("g").attr("class", "map-dynamic");
+
+  const points = [
+    { point: donorMarker, cls: "marker-donor", label: "Donor" },
+    { point: aMarker, cls: "marker-a", label: "A" },
+    { point: bMarker, cls: "marker-b", label: "B" }
+  ];
+
+  points.forEach(({ point, cls, label }) => {
+    markers.append("circle")
+      .attr("class", `map-marker ${cls}`)
+      .attr("cx", point[0])
+      .attr("cy", point[1])
+      .attr("r", 5);
+
+    markers.append("text")
+      .attr("class", "marker-label")
+      .attr("x", point[0] + 8)
+      .attr("y", point[1] + 3)
+      .text(label);
+  });
+}
+
+// Redraw if the browser window changes size.
+window.addEventListener("resize", () => {
+  if (!stateFeatures.length) return;
+
+  const mapEl = document.getElementById("map");
+  const width = mapEl.clientWidth || 700;
+  const height = mapEl.clientHeight || 330;
+
+  mapProjection = d3.geoAlbersUsa()
+    .fitSize([width - 12, height - 12], {
+      type: "FeatureCollection",
+      features: stateFeatures
+    });
+
+  mapSvg
+    .attr("viewBox", `0 0 ${width} ${height}`);
+
+  mapSvg.selectAll(".state")
+    .attr("d", d3.geoPath(mapProjection));
+
+  drawMap();
+});
+
+// ---------------------------------------------------------
+// Calculate distance between two geographic points in
+// nautical miles.
+//
+// The points are [longitude, latitude], which is the format
+// returned by d3.geoCentroid().
+// ---------------------------------------------------------
+function distanceNM(point1, point2) {
+
+  const lon1 = point1[0] * Math.PI / 180;
+  const lat1 = point1[1] * Math.PI / 180;
+
+  const lon2 = point2[0] * Math.PI / 180;
+  const lat2 = point2[1] * Math.PI / 180;
+
+  const dLat = lat2 - lat1;
+  const dLon = lon2 - lon1;
+
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) *
+    Math.cos(lat2) *
+    Math.sin(dLon / 2) ** 2;
+
+  const c = 2 * Math.atan2(
+    Math.sqrt(a),
+    Math.sqrt(1 - a)
+  );
+
+  // Earth radius in nautical miles
+  const EARTH_RADIUS_NM = 3440.065;
+
+  return EARTH_RADIUS_NM * c;
+}
+
+
+// ---------------------------------------------------------
+// Get the distance between a candidate's state and the
+// donor's state using the same state centroids used by
+// the map.
+// ---------------------------------------------------------
+function getCandidateDistanceNM(candidate, donorState) {
+
+  const candidateFeature = findStateFeature(candidate.state);
+  const donorFeature = findStateFeature(donorState);
+
+  if (!candidateFeature || !donorFeature) {
+    return Infinity;
+  }
+
+  const candidatePoint =
+    d3.geoCentroid(candidateFeature);
+
+  const donorPoint =
+    d3.geoCentroid(donorFeature);
+
+  return distanceNM(candidatePoint, donorPoint);
+}
+
+
+// ---------------------------------------------------------
+// Calculate the OPTN proximity points from Table 8-3.
+//
+// <=250 NM:
+//   2 - (2 / 250) * distance
+//
+// >250 and <=2500 NM:
+//   4 - [
+//       (4 / (2500 - 250)) * distance
+//       - (4 * 250 / (2500 - 250))
+//   ]
+//
+// >2500 NM:
+//   0
+// ---------------------------------------------------------
+function getDistancePoints(distance) {
+
+  if (distance <= 250) {
+
+    return 2 - (2 / 250) * distance;
+
+  } else if (distance <= 2500) {
+
+    return 4
+      - (
+          (4 / (2500 - 250)) * distance
+          - (4 * 250 / (2500 - 250))
+        );
+
+  } else {
+
+    return 0;
+  }
+}
+
+
+// ---------------------------------------------------------
+// Calculate the allocation points that apply to the
+// candidate.
+//
+// This intentionally leaves out:
+//   - CPRA points (everyone assumed CPRA 0)
+//   - EPTS
+//   - medical urgency
+//   - blood type
+// ---------------------------------------------------------
+function getAllocationPoints(candidate, donorState) {
+
+  const distance =
+    getCandidateDistanceNM(candidate, donorState);
+
+  // Waiting time:
+  // 1 point per year, because the policy gives
+  // 1/365 point per day.
+  const waitingPoints =
+    Math.max(candidate.waitYears, candidate.Dialyear) || 0;
+
+  // Prior living donor = 4 points
+  const priorLivingDonorPoints =
+    candidate.priorLivingDonor === "Yes" ? 4 : 0;
+
+  // HLA points.
+  //
+  // ASSUMPTION:
+  //   0 mismatches = 0-ABDR mismatch = 2 points
+  //   1 mismatch = single DR mismatch = 1 point
+  //
+  // If hlaMismatch represents total A/B/DR mismatches,
+  // we should revise this later because a single mismatch
+  // isn't necessarily an HLA-DR mismatch.
+  let hlaPoints = 0;
+
+  if (Number(candidate.hlaMismatch) === 0) {
+    hlaPoints = 2;
+  } else if (Number(candidate.hlaMismatch) === 1) {
+    hlaPoints = 1;
+  }
+
+  const distancePoints =
+    getDistancePoints(distance);
+
+  const totalPoints =
+    waitingPoints +
+    priorLivingDonorPoints +
+    hlaPoints +
+    distancePoints;
+
+  return {
+    distanceNM: distance,
+    waitingPoints: waitingPoints,
+    priorLivingDonorPoints: priorLivingDonorPoints,
+    hlaPoints: hlaPoints,
+    distancePoints: distancePoints,
+    totalPoints: totalPoints
+  };
+}
+
+
+function getAllocationClassification(candidate, donorState) {
+
+  const distance =
+    getCandidateDistanceNM(candidate, donorState);
+
+  const within250 =
+    distance <= 250;
+
+  const zeroABDR =
+    Number(candidate.hlaMismatch) === 0;
+
+  const priorLivingDonor =
+    candidate.priorLivingDonor === "Yes";
+
+  const pediatric =
+    candidate.listedAsChild === "Yes";
+
+
+  // -------------------------------------------------------
+  // Classification 5
+  //
+  // Prior living donor
+  // Within 250 NM
+  // -------------------------------------------------------
+  if (priorLivingDonor && within250) {
+    return 5;
+  }
+
+
+  // -------------------------------------------------------
+  // Classification 11
+  //
+  // 0-ABDR mismatch
+  // Blood type identical/permissible
+  // Within 250 NM
+  //
+  // We are ignoring blood type.
+  // -------------------------------------------------------
+  if (zeroABDR && within250) {
+    return 11;
+  }
+
+
+  // -------------------------------------------------------
+  // Classification 14
+  //
+  // 0-ABDR mismatch
+  // CPRA 0-20%
+  // <18 at match
+  // Nation
+  //
+  // CPRA is assumed to be 0.
+  //
+  // Note: classification 11 takes precedence when the
+  // candidate is within 250 NM.
+  // -------------------------------------------------------
+  if (zeroABDR && pediatric) {
+    return 14;
+  }
+
+
+  // -------------------------------------------------------
+  // Classification 28
+  //
+  // All remaining candidates
+  // Within 250 NM
+  // -------------------------------------------------------
+  if (within250) {
+    return 28;
+  }
+
+
+  // -------------------------------------------------------
+  // Classification 30
+  //
+  // All remaining candidates
+  // Nation
+  // -------------------------------------------------------
+  return 30;
+}
+
+
+
+const STATES = [
+  'Alabama','Arizona','Alaska','Arkansas', 
+  'California','Colorado','Connecticut',
+  'Delaware', 'Florida','Georgia','Hawaii','Idaho', 'Illinois',
+  'Indiana','Iowa','Kansas','Louisiana','Maine', 'Maryland', 
+  'Massachusetts','Michigan','Minnesota','Mississippi', 'Missouri',
+  'Montana', 'Nebraska', 'Nevada', 'New Hampshire','New Jersey',
+  'New Mexico', 'New York','North Carolina','North Dakota', 
+  'Ohio','Oklahoma', 'Oregon','Pennsylvania', 'Rhode Island',
+  'South Carolina', 'South Dakota', 'Tennessee','Texas','Utah', 
+  'Vermont', 'Virginia','Washington','West Virginia', 
+  'Wisconsin', 'Wyoming'
+];
+
+const STATESprob = [.0155, .0125, .0013, .0052, 
+  .1903, .0105, .0102, 
+  .0037, .0505, .0301, .0051, .0027, .0395,
+  .0147, .0057, .0045, .0154, .0037, .0222,
+  .0297, .0241, .0147, .0094, .0145,
+  .0015, .0030, .0067, .0042, .0312,
+  .0057, .0719, .0412, .0015,
+  .0203, .0072, .0055, .0452, .0040,
+  .0210, .0032, .0182, .0956, .0051,
+  .0017, .0311, .0121, .0028,
+  .0126, .0008
+];
+
+function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function randState() { return STATES[rand(0, STATES.length - 1)]; }
+function randBool(pctTrue) { return Math.random() < pctTrue; }
+
+
+const waitYearscat = [0,1,2,3,4,5,6,7,8,9,10];
+const waitYearsprob = [.21, .29, .18, .12, .07, .05, .03, .02, .01, .01, .01]
+
+const createRange = (start, stop, step = 1) => 
+  Array.from(
+    { length: Math.ceil((stop - start) / step) + 1 }, 
+    (_, index) => start + index * step
+  );
+
+const agecat = createRange(18,96,1)
+const ageprob = [0.002371727, 0.002116153, 0.002279721, 0.002279721, 0.002525072, 0.002606856, 0.003598483, 0.00358826
+, 0.003721158
+, 0.004385651
+, 0.004886576
+, 0.005479508
+, 0.006420021
+, 0.007248081
+, 0.007217412
+, 0.009149552
+, 0.009446018
+, 0.010366084
+, 0.011541725
+, 0.011848414
+, 0.012400454
+, 0.013964567
+, 0.013954344
+, 0.014363263
+, 0.015927376
+, 0.016090943
+, 0.01738926
+, 0.017920854
+, 0.017522158
+, 0.01828888
+, 0.020026784
+, 0.021018412
+, 0.02225539
+, 0.023972848
+, 0.024218199
+, 0.02639569
+,0.028358499
+,0.028624296
+,0.028164263
+,0.0296057
+,0.0282256
+,0.02943191
+,0.031169814
+,0.030771118
+,0.02998395
+,0.030607551
+,0.030208855
+,0.029554586
+,0.029299011
+,0.029738599
+,0.0282256
+,0.027745121
+,0.024821354
+,0.020752615
+,0.017276807
+,0.014884634
+,0.012635582
+,0.00955847
+,0.007135628
+,0.005203488
+,0.003843834
+,0.002228606
+,0.001298316
+,0.000633824
+,0.000490702
+,0.000245351
+,0.000163567
+,0.00010223
+,0.0000511148
+,0.0000511148
+,0.0000306689
+,0.0000204459
+,0.000010223
+,0.0000306689
+,0.0000204459
+,0
+,0
+,0
+,0.000010223
+]
+
+
+
+function sampleCategorical(items, weights) {
+  const r = Math.random(); // Generates a float between 0 and 1
+  let cumulativeProbability = 0;
+
+  for (let i = 0; i < items.length; i++) {
+    cumulativeProbability += weights[i];
+    if (r < cumulativeProbability) {
+      return items[i];
+    }
+  }
+}
+
+
+const HLAmismatchcats =  [0,1,2,3,4,5,6];
+const HLAmismatchprob= [.0667, .0288, .0595, .1517, .2647, .2895, .1392];
+
+const Dialyearcat = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const Dialyearprob = [.3405, .1046, .1301, .1177, .0968, .0672, .0488, .0309, .0190, .0125,.0319 ]
+
+
+function genCandidate() {
+  const age = sampleCategorical(agecat,ageprob);
+  const waitYears = sampleCategorical(waitYearscat, waitYearsprob);
+  const ageAtListing = age - waitYears;
+  const hlaMismatches = sampleCategorical(HLAmismatchcats, HLAmismatchprob)
+  const Dialyear = sampleCategorical(Dialyearcat,Dialyearprob)
+  const Statesel = sampleCategorical(STATES, STATESprob)
+  return {
+    caseId: 'C-' + rand(1000, 9999),
+    age: age,
+    waitYears: waitYears,
+    dialysisYears: Dialyear,
+    hlaMismatch: hlaMismatches,
+    state: Statesel,
+    priorLivingDonor: randBool(0.05) ? 'Yes' : 'No',
+    listedAsChild: ageAtListing < 18 ? 'Yes' : 'No',
+  };
+}
+
+function genDonorState() { return sampleCategorical(STATES, STATESprob); }
+
+let current = { a: null, b: null, donorState: null, locked: false };
+let pairIndex = 1;
+
+function renderCandidate(cand, rowsEl, idEl) {
+  idEl.textContent = 'CASE ' + cand.caseId;
+  rowsEl.innerHTML = FIELDS.map(f => {
+    const val = f.unit ? `${cand[f.key]} ${f.unit}` : `${cand[f.key]}`;
+    return `<div class="row"><span class="row-label">${f.label}</span><span class="row-value">${val}</span></div>`;
+  }).join('');
+}
+
+function newPair() {
+  current.a = genCandidate();
+  current.b = genCandidate();
+  current.donorState = genDonorState();
+  current.locked = false;
+  document.getElementById('pairNum').textContent = pairIndex;
+  document.getElementById('donorState').textContent = current.donorState;
+  renderCandidate(current.a, document.getElementById('rowsA'), document.getElementById('idA'));
+  renderCandidate(current.b, document.getElementById('rowsB'), document.getElementById('idB'));
+  document.getElementById('cardA').classList.remove('chosen', 'faded');
+  document.getElementById('cardB').classList.remove('chosen', 'faded');
+  drawMap();
+}
+
+async function refreshCount() {
+    document.getElementById("totalCount").textContent = "—";
+}
+
+async function submitChoice(side) {
+  if (current.locked) return;
+  current.locked = true;
+
+  const cardA = document.getElementById('cardA');
+  const cardB = document.getElementById('cardB');
+  const chosenCard = side === 'A' ? cardA : cardB;
+  const otherCard = side === 'A' ? cardB : cardA;
+  chosenCard.classList.add('chosen');
+  otherCard.classList.add('faded');
+
+  const record = {
+  timestamp: new Date().toISOString(),
+
+  // Respondent information
+  age: respondent.age,
+  occupation: respondent.occupation,
+
+  // Choice information
+  donorState: current.donorState,
+  candidateA: current.a,
+  candidateB: current.b,
+  chosen: side,
+};
+  try {
+
+    await fetch(WEB_APP_URL, {
+        method: "POST",
+        mode : "no-cors",
+        headers: {
+            "Content-Type": "text/plain"
+        },
+        body: JSON.stringify(record)
+    });
+
+} catch (e) {
+    console.error("Submission failed", e);
+}
+
+  showFeedback(side);
+
+document.getElementById('nextPairBtn')
+  .addEventListener('click', () => {
+
+    document.getElementById('feedbackScreen').style.display = 'none';
+
+    pairIndex += 1;
+    newPair();
+  });
+}
+
+document.getElementById('cardA').addEventListener('click', () => submitChoice('A'));
+document.getElementById('cardB').addEventListener('click', () => submitChoice('B'));
+document.getElementById('skipBtn').addEventListener('click', () => {
+  pairIndex += 1;
+  newPair();
+});
+
+document.getElementById('beginBtn').addEventListener('click', async () => {
+
+  const ageInput = document.getElementById('ageInput');
+  const occupationInput = document.getElementById('occupationInput');
+  const gateError = document.getElementById('gateError');
+
+  const age = Number(ageInput.value);
+  const occupation = occupationInput.value;
+
+  if (!age || age < 18 || age > 120) {
+    gateError.textContent = 'Please enter a valid age.';
+    return;
+  }
+
+  if (!occupation) {
+    gateError.textContent = 'Please select your occupation.';
+    return;
+  }
+
+  respondent.age = age;
+  respondent.occupation = occupation;
+
+  // Hide the welcome screen first so the map has its
+  // correct visible dimensions.
+  document.getElementById('gateScreen').style.display = 'none';
+
+  // Generate the first pair.
+  newPair();
+  refreshCount();
+
+  // Now load and draw the map.
+  try {
+    await loadMap();
+  } catch (err) {
+    console.error("Map failed to load:", err);
+    document.getElementById("map").textContent =
+      "Map unavailable. Please check your internet connection.";
+  }
+});
+
+
+</script>
+</body>
+</html>
