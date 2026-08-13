@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Allocation Priority Study</title>
 <style>
   :root {
@@ -493,9 +494,12 @@
 }
 
   @media (max-width: 640px) {
-    #map { height: 260px; }
-    .map-title { align-items: flex-start; flex-direction: column; }
-    .map-legend { justify-content: flex-start; }
+  #map {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1.54 / 1;
+    overflow: hidden;
+  }
   }
 
   @media (max-width: 640px) {
@@ -579,7 +583,7 @@
 
     <div class="sub feedback-disclaimer">
       <em>
-        Based on a simplified version of OPTN Allocation Policy as on 8/11/26, and under the assumption that donor KDPI = 50, and neither candidates are blood type O and neither highly sensitized or medically urgent.
+        Based on a simplified version of OPTN Allocation Policy as on 8/11/26, and under the assumption that donor KDPI = 50, and both candidates are blood type O and neither are highly sensitized or medically urgent.
       </em>
     </div>
 
@@ -617,7 +621,6 @@
       <div class="rows" id="rowsA"></div>
       <div class="pick-hint">Select this candidate</div>
     </div>
-    <div class="versus">VS</div>
     <div class="card" id="cardB" data-side="B">
       <div class="card-label">Candidate B</div>
       <div class="case-id" id="idB">CASE —</div>
@@ -629,7 +632,6 @@
   <footer>
     <div class="count">Responses collected: <b id="totalCount">—</b></div>
     <div class="actions">
-      <button class="util" id="exportBtn">Export CSV</button>
       <button class="util" id="skipBtn">Skip this pair</button>
     </div>
   </footer>
@@ -674,14 +676,29 @@ async function loadMap() {
 
   const mapEl = document.getElementById("map");
   const width = mapEl.clientWidth || 700;
-  const height = mapEl.clientHeight || 330;
+
+  const isMobile = window.innerWidth <= 640;
+
+  const crop = isMobile ? width * 0.15 : 0;
+
+// Use a more compact aspect ratio on mobile
+  const height = isMobile
+  ? width * 0.65
+  : (mapEl.clientHeight || 330);
+
+  console.log("Map width:", width);
+  console.log("Window width:", window.innerWidth);
+  console.log("Is mobile:", window.innerWidth <= 640);
 
   mapSvg = d3.select("#map")
-    .append("svg")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("preserveAspectRatio", "xMidYMid meet")
-    .attr("role", "img")
-    .attr("aria-label", "United States map showing donor and candidate locations");
+  .append("svg")
+  .attr(
+    "viewBox",
+    `${crop} 0 ${width - 2 * crop} ${height}`
+  )
+  .attr("preserveAspectRatio", "xMidYMid meet")
+  .attr("role", "img")
+  .attr("aria-label", "United States map showing donor and candidate locations");
 
   mapProjection = d3.geoAlbersUsa()
     .fitSize([width - 12, height - 12], {
@@ -860,6 +877,89 @@ function determineAllocationConsistency() {
   return null;
 }
 
+function drawRoute(routes, startPoint, endPoint, cssClass, breakLine = false) {
+
+  if (!breakLine) {
+
+    routes.append("line")
+      .attr("class", cssClass)
+      .attr("x1", startPoint[0])
+      .attr("y1", startPoint[1])
+      .attr("x2", endPoint[0])
+      .attr("y2", endPoint[1]);
+
+    return;
+  }
+
+  // -------------------------------------------------------
+  // For Alaska/Hawaii, leave a visible gap in the middle
+  // of the line.
+  // -------------------------------------------------------
+
+  const GAP = 0.12;
+
+  const x1 = startPoint[0];
+  const y1 = startPoint[1];
+
+  const x2 = endPoint[0];
+  const y2 = endPoint[1];
+
+  const xA = x1 + (x2 - x1) * (0.5 - GAP);
+  const yA = y1 + (y2 - y1) * (0.5 - GAP);
+
+  const xB = x1 + (x2 - x1) * (0.5 + GAP);
+  const yB = y1 + (y2 - y1) * (0.5 + GAP);
+
+  // First half
+  routes.append("line")
+    .attr("class", cssClass)
+    .attr("x1", x1)
+    .attr("y1", y1)
+    .attr("x2", xA)
+    .attr("y2", yA);
+
+  // Second half
+  routes.append("line")
+    .attr("class", cssClass)
+    .attr("x1", xB)
+    .attr("y1", yB)
+    .attr("x2", x2)
+    .attr("y2", y2);
+
+  const CAP = 5;
+
+// Direction of the route
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+
+  const length = Math.sqrt(dx * dx + dy * dy);
+
+// Unit vector perpendicular to the route
+  const px = -dy / length;
+  const py = dx / length;
+
+
+// First cap
+  routes.append("line")
+    .attr("class", cssClass)
+    .attr("x1", xA - px * CAP)
+    .attr("y1", yA - py * CAP)
+    .attr("x2", xA + px * CAP)
+    .attr("y2", yA + py * CAP);
+
+
+// Second cap
+  routes.append("line")
+    .attr("class", cssClass)
+    .attr("x1", xB - px * CAP)
+    .attr("y1", yB - py * CAP)
+    .attr("x2", xB + px * CAP)
+    .attr("y2", yB + py * CAP);
+
+
+}
+
+
 function drawMap() {
   if (!mapSvg || !stateFeatures.length) return;
 
@@ -916,8 +1016,8 @@ function drawMap() {
 // Handle candidates A and B in the same state
 // ---------------------------------------------------------
   if (candidateAState === candidateBState) {
-    aMarker[0] -= OFFSET;
-    bMarker[0] += OFFSET;
+    aMarker[0] -= (OFFSET + 5);
+    bMarker[0] += (OFFSET + 5);
   } 
 
 // ---------------------------------------------------------
@@ -941,15 +1041,34 @@ function drawMap() {
 
   const routes = mapSvg.append("g").attr("class", "map-dynamic");
 
-  routes.append("line")
-    .attr("class", "route route-a")
-    .attr("x1", donorPoint[0]).attr("y1", donorPoint[1])
-    .attr("x2", aPoint[0]).attr("y2", aPoint[1]);
+  const donorIsRemote =
+  donorState === "Alaska" ||
+  donorState === "Hawaii";
 
-  routes.append("line")
-    .attr("class", "route route-b")
-    .attr("x1", donorPoint[0]).attr("y1", donorPoint[1])
-    .attr("x2", bPoint[0]).attr("y2", bPoint[1]);
+const aIsRemote =
+  candidateAState === "Alaska" ||
+  candidateAState === "Hawaii";
+
+const bIsRemote =
+  candidateBState === "Alaska" ||
+  candidateBState === "Hawaii";
+
+
+  drawRoute(
+    routes,
+    donorPoint,
+    aPoint,
+    "route route-a",
+    donorIsRemote !== aIsRemote
+  );
+
+  drawRoute(
+    routes,
+    donorPoint,
+    bPoint,
+    "route route-b",
+    donorIsRemote !== bIsRemote
+  );
 
   const markers = mapSvg.append("g").attr("class", "map-dynamic");
 
@@ -1423,7 +1542,35 @@ function newPair() {
 }
 
 async function refreshCount() {
-    document.getElementById("totalCount").textContent = "—";
+
+  const countElement =
+    document.getElementById("totalCount");
+
+  try {
+
+    countElement.textContent = "…";
+
+    const response = await fetch(
+      "/.netlify/functions/get-response-count"
+    );
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.error || "Could not retrieve response count"
+      );
+    }
+
+    countElement.textContent =
+      result.count.toLocaleString();
+
+  } catch (error) {
+
+    console.error("Could not retrieve response count:", error);
+
+    countElement.textContent = "—";
+  }
 }
 
 async function submitChoice(side) {
@@ -1498,7 +1645,8 @@ document.getElementById('nextPairBtn')
 
     pairIndex += 1;
     newPair();
-  });
+  }
+  , { once: true});
 }
 
 document.getElementById('cardA').addEventListener('click', () => submitChoice('A'));
