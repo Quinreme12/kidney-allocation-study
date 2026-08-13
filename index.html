@@ -1654,6 +1654,7 @@ document.getElementById('cardB').addEventListener('click', () => submitChoice('B
 document.getElementById('skipBtn').addEventListener('click', () => {
   pairIndex += 1;
   newPair();
+  refreshCount();
 });
 
 document.getElementById('beginBtn').addEventListener('click', async () => {
