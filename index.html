@@ -189,6 +189,74 @@
   .row-label {
     font-size: 13px;
     color: var(--ink-soft);
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .info-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 10px;
+    line-height: 1;
+    cursor: help;
+  }
+
+  .info-icon:hover,
+  .info-icon:focus {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .info-icon .tooltip {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: calc(100% + 9px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 210px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--sans);
+    font-style: normal;
+    font-size: 11.5px;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    letter-spacing: 0;
+    padding: 9px 11px;
+    border-radius: 5px;
+    box-shadow: 0 6px 18px rgba(30, 42, 50, 0.18);
+    z-index: 20;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+  }
+
+  .info-icon .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--ink);
+  }
+
+  .info-icon:hover .tooltip,
+  .info-icon:focus .tooltip {
+    visibility: visible;
+    opacity: 1;
   }
 
   .row-value {
@@ -444,7 +512,9 @@
 
 .feedback-card {
   width: 100%;
-  max-width: 560px;
+  max-width: 640px;
+  max-height: 88vh;
+  overflow-y: auto;
   background: var(--record);
   border: 1px solid var(--line);
   border-radius: 6px;
@@ -491,6 +561,188 @@
 
 .feedback-comparison strong {
   font-family: var(--mono);
+}
+
+.results-list {
+  text-align: left;
+  margin-bottom: 28px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.result-row {
+  border-bottom: 1px solid var(--line);
+}
+
+.result-row:last-child {
+  border-bottom: none;
+}
+
+.result-row summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  background: var(--paper);
+  user-select: none;
+}
+
+.result-row summary::-webkit-details-marker {
+  display: none;
+}
+
+.result-row summary:hover {
+  background: var(--record);
+}
+
+.result-row .row-num {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.result-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.result-badge.same {
+  background: rgba(63, 110, 100, .10);
+  color: var(--accent);
+}
+
+.result-badge.different {
+  background: rgba(91, 102, 112, .14);
+  color: var(--ink-soft);
+}
+
+.result-badge.tie {
+  background: var(--line);
+  color: var(--ink-soft);
+}
+
+.result-row .row-summary-text {
+  flex: 1;
+  color: var(--ink);
+  font-size: 12.5px;
+}
+
+.result-row .chevron {
+  font-family: var(--mono);
+  color: var(--ink-soft);
+  transition: transform .15s ease;
+  flex-shrink: 0;
+}
+
+.result-row[open] .chevron {
+  transform: rotate(90deg);
+}
+
+.result-detail {
+  padding: 4px 14px 16px;
+  background: var(--paper);
+}
+
+.result-detail .donor-line {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  margin: 6px 0 10px;
+}
+
+.result-detail .donor-line strong {
+  font-family: var(--mono);
+  color: var(--ink);
+}
+
+.result-detail .detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+.result-detail .detail-col {
+  background: var(--record);
+  padding: 10px 12px;
+}
+
+.result-detail .detail-col.chosen-col {
+  background: rgba(63, 110, 100, .06);
+}
+
+.result-detail .detail-col h4 {
+  margin: 0 0 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.result-detail .detail-field-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  padding: 3px 0;
+}
+
+.result-detail .detail-field-row span:first-child {
+  color: var(--ink-soft);
+}
+
+.result-detail .detail-field-row span:last-child {
+  font-family: var(--mono);
+  text-align: right;
+}
+
+.alloc-stats {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--line);
+}
+
+.alloc-stat {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  padding: 2px 0;
+}
+
+.alloc-stat > span:first-child {
+  color: var(--ink-soft);
+  flex-shrink: 0;
+}
+
+.alloc-stat > span:last-child {
+  font-family: var(--mono);
+  text-align: right;
+}
+
+.alloc-note {
+  font-family: var(--sans);
+  color: var(--ink-soft);
+  font-size: 10.5px;
+}
+
+@media (max-width: 640px) {
+  .result-detail .detail-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
   @media (max-width: 640px) {
@@ -566,15 +818,17 @@
 
     <div class="feedback-comparison">
       <div>
-        <span class="feedback-label">Your choice</span>
+        <span class="feedback-label" id="feedbackChoiceLabel">Your choice</span>
         <strong id="feedbackChoice"></strong>
       </div>
 
       <div>
-        <span class="feedback-label">Allocation priority</span>
+        <span class="feedback-label" id="feedbackPriorityLabel">Allocation priority</span>
         <strong id="feedbackPriority"></strong>
       </div>
     </div>
+
+    <div id="resultsList" class="results-list"></div>
 
     <button id="nextPairBtn" class="begin-button">
       Next comparison
@@ -583,7 +837,7 @@
 
     <div class="sub feedback-disclaimer">
       <em>
-        Based on a simplified version of OPTN Allocation Policy as on 8/11/26, and under the assumption that donor KDPI = 50, and both candidates are blood type O and neither are highly sensitized or medically urgent.
+        Based on a simplified version of OPTN Allocation Policy as on 8/11/26, and under the assumption that donor KDPI = 50, and both candidates are blood type O and neither are highly sensitized or medically urgent, in each of the 20 comparisons.
       </em>
     </div>
 
@@ -593,13 +847,13 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Allocation Priority Study</div>
+    <div class="eyebrow">Allocation Priority</div>
     <h1>Who receives the kidney?</h1>
-    <p class="sub">You'll see two candidates from a transplant waiting list. Review their case details and choose the one you believe should receive higher priority. There's no correct answer — we're studying how people weigh these factors.</p>
-    <div class="disclosure">Responses are stored in a shared, anonymous dataset visible to anyone using this tool.</div>
+    <p class="sub">You'll see two hypothetical candidates waiting for a kidney transplant. Review their case details and choose the one who should receive higher priority. There's no correct answer — we're studying how people weigh these factors.</p>
+    <div class="disclosure">Responses are stored in an anonymous dataset.</div>
   </header>
 
-  <p class="prompt">Case pair <span id="pairNum">1</span> — who should be prioritized?</p>
+  <p class="prompt">Case pair <span id="pairNum">1</span> of 20 — who should be prioritized?</p>
   <p class="donor-line">Donor kidney recovered in: <span id="donorState">—</span></p>
 
 <div class="map-wrap">
@@ -643,13 +897,48 @@
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
 <script>
 const FIELDS = [
-  { key: 'age', label: 'Age', unit: 'yrs' },
-  { key: 'waitYears', label: 'Time on waiting list', unit: 'yrs' },
-  { key: 'dialysisYears', label: 'Time on dialysis', unit: 'yrs' },
-  { key: 'hlaMismatch', label: 'HLA mismatch', unit: '/ 6' },
-  { key: 'state', label: 'State of residence', unit: '' },
-  { key: 'priorLivingDonor', label: 'Prior living donor', unit: '' },
-  { key: 'listedAsChild', label: 'Listed as a child', unit: '' },
+  {
+    key: 'age',
+    label: 'Age',
+    unit: 'yrs',
+    description: "The candidate's current age."
+  },
+  {
+    key: 'waitYears',
+    label: 'Time on waiting list',
+    unit: 'yrs',
+    description: 'How long the candidate has been on the national kidney transplant waiting list.'
+  },
+  {
+    key: 'dialysisYears',
+    label: 'Time on dialysis',
+    unit: 'yrs',
+    description: 'Total time the candidate has spent on dialysis. Candidates with 0 waiting time have reduced kidney function (eGFR <= 20), but are not currently on dialysis'
+  },
+  {
+    key: 'hlaMismatch',
+    label: 'HLA mismatch',
+    unit: '/ 6',
+    description: 'The number of immune-system markers that differ between donor and candidate. Fewer mismatches mean a closer biological match and lower risk of organ rejection.'
+  },
+  {
+    key: 'state',
+    label: 'State of residence',
+    unit: '',
+    description: "The candidate's state of residence. Greater proximity reduces transport time, which is associated with a lower rejection risk"
+  },
+  {
+    key: 'priorLivingDonor',
+    label: 'Prior living donor',
+    unit: '',
+    description: 'Whether the candidate previously donated an organ themselves.'
+  },
+  {
+    key: 'listedAsChild',
+    label: 'Listed as a child',
+    unit: '',
+    description: 'Whether the candidate was under 18 years old at the time they were listed for transplant.'
+  },
 ];
 
 
@@ -721,10 +1010,7 @@ function findStateFeature(stateName) {
   return stateFeatures.find(d => d.properties.name === stateName);
 }
 
-function showFeedback(side) {
-
-  const allocationSide =
-    determineAllocationConsistency();
+function showResultsSummary() {
 
   const feedbackScreen =
     document.getElementById('feedbackScreen');
@@ -744,67 +1030,127 @@ function showFeedback(side) {
   const priority =
     document.getElementById('feedbackPriority');
 
+  const choiceLabel =
+    document.getElementById('feedbackChoiceLabel');
 
-  // Exact tie
-  if (allocationSide === null) {
+  const priorityLabel =
+    document.getElementById('feedbackPriorityLabel');
 
-    icon.textContent = '—';
+  const total = results.length;
+  const matched = results.filter(r => r.consistent === true).length;
+  const differed = results.filter(r => r.consistent === false).length;
+  const tied = results.filter(r => r.consistent === null).length;
+  const decided = matched + differed;
 
-    title.textContent =
-      'The candidates are tied under this version of the allocation rules.';
+  icon.style.display = 'none';
 
-    text.textContent =
-      'Neither candidate has higher priority based on the characteristics included in this study.';
+  title.textContent =
+    "You've completed all " + total + ' comparisons.';
 
-    choice.textContent =
-      'Candidate ' + side;
+  text.textContent = decided > 0
+    ? 'Your choices matched the current allocation system in ' + matched + ' of ' + decided +
+      ' decided comparisons' + (tied > 0 ? ' (' + tied + ' were exact ties).' : '.')
+    : 'No comparisons were decided by the allocation rules used in this study.';
 
-    priority.textContent =
-      'Tie';
+  choiceLabel.textContent = 'Matched allocation';
+  choice.textContent = matched + ' / ' + decided;
 
-  }
+  priorityLabel.textContent = 'Differed from allocation';
+  priority.textContent = differed + ' / ' + decided;
 
+  document.getElementById('nextPairBtn').textContent =
+    'Start another set of 20';
 
-  // Participant matched allocation
-  else if (side === allocationSide) {
-
-    icon.textContent = '✓';
-
-    title.textContent =
-      'Your choice matched the allocation system.';
-
-    text.textContent =
-      'The candidate you selected would have higher priority under the allocation rules used in this study.';
-
-    choice.textContent =
-      'Candidate ' + side;
-
-    priority.textContent =
-      'Candidate ' + allocationSide;
-
-  }
-
-
-  // Participant differed from allocation
-  else {
-
-    icon.textContent = '×';
-
-    title.textContent =
-      'Your choice differed from the allocation system.';
-
-    text.textContent =
-      'The other candidate would have higher priority under the allocation rules used in this study.';
-
-    choice.textContent =
-      'Candidate ' + side;
-
-    priority.textContent =
-      'Candidate ' + allocationSide;
-  }
-
+  renderResultsList();
 
   feedbackScreen.style.display = 'flex';
+}
+
+function renderResultsList() {
+
+  const container = document.getElementById('resultsList');
+
+  container.innerHTML = results.map((r, i) => {
+
+    const badgeClass =
+      r.consistent === true ? 'same' :
+      r.consistent === false ? 'different' : 'tie';
+
+    const badgeText =
+      r.consistent === true ? 'Same' :
+      r.consistent === false ? 'Different' : 'Tie';
+
+    const chosenCand = r.chosen === 'A' ? r.candidateA : r.candidateB;
+
+    const summaryText = 'Chose Candidate ' + r.chosen +
+      (r.allocationSide === null
+        ? ' — allocation rules gave neither priority'
+        : ' — allocation favored Candidate ' + r.allocationSide);
+
+    return `<details class="result-row">
+      <summary>
+        <span class="row-num">${i + 1}</span>
+        <span class="result-badge ${badgeClass}">${badgeText}</span>
+        <span class="row-summary-text">${summaryText}</span>
+        <span class="chevron">›</span>
+      </summary>
+      <div class="result-detail">
+        <div class="donor-line">Donor state: <strong>${r.donorState}</strong></div>
+        <div class="detail-grid">
+          ${renderDetailColumn('A', r)}
+          ${renderDetailColumn('B', r)}
+        </div>
+      </div>
+    </details>`;
+
+  }).join('');
+}
+
+function getClassificationLabel(cls) {
+  switch (cls) {
+    case 5: return 'Prior living donor, within 250 NM';
+    case 11: return '0-ABDR mismatch, within 250 NM';
+    case 28: return 'Within 250 NM';
+    case 30: return 'National';
+    default: return '';
+  }
+}
+
+function renderDetailColumn(side, r) {
+
+  const cand = side === 'A' ? r.candidateA : r.candidateB;
+  const isChosen = r.chosen === side;
+  const isAllocationPriority = r.allocationSide === side;
+
+  const tags = [];
+  if (isChosen) tags.push('your choice');
+  if (isAllocationPriority) tags.push('allocation priority');
+  const tagText = tags.length ? ' (' + tags.join(', ') + ')' : '';
+
+  const classification = getAllocationClassification(cand, r.donorState);
+  const classificationLabel = getClassificationLabel(classification);
+  const points = getAllocationPoints(cand, r.donorState);
+  const totalPointsDisplay = Math.round(points.totalPoints * 10) / 10;
+
+  const fieldRows = FIELDS.map(f => {
+    const val = f.unit ? `${cand[f.key]} ${f.unit}` : `${cand[f.key]}`;
+    return `<div class="detail-field-row"><span>${f.label}</span><span>${val}</span></div>`;
+  }).join('');
+
+  return `<div class="detail-col${isChosen ? ' chosen-col' : ''}">
+    <h4>Candidate ${side} — ${cand.caseId}${tagText}</h4>
+    <div class="alloc-stats">
+      <div class="alloc-stat">
+        <span>Classification</span>
+        <span>${classification}<span class="alloc-note"> — ${classificationLabel}</span></span>
+      </div>
+      <div class="alloc-stat">
+        <span>Total points</span>
+        <span>${totalPointsDisplay}</span>
+      </div>
+    </div>
+    ${fieldRows}
+  </div>`;
 }
 
 
@@ -1231,7 +1577,7 @@ function getAllocationPoints(candidate, donorState) {
   // 1 point per year, because the policy gives
   // 1/365 point per day.
   const waitingPoints =
-    Math.max(candidate.waitYears, candidate.Dialyear) || 0;
+    Math.max(candidate.waitYears, candidate.dialysisYears) || 0;
 
   // Prior living donor = 4 points
   const priorLivingDonorPoints =
@@ -1317,22 +1663,7 @@ function getAllocationClassification(candidate, donorState) {
   }
 
 
-  // -------------------------------------------------------
-  // Classification 14
-  //
-  // 0-ABDR mismatch
-  // CPRA 0-20%
-  // <18 at match
-  // Nation
-  //
-  // CPRA is assumed to be 0.
-  //
-  // Note: classification 11 takes precedence when the
-  // candidate is within 250 NM.
-  // -------------------------------------------------------
-  if (zeroABDR && pediatric) {
-    return 14;
-  }
+
 
 
   // -------------------------------------------------------
@@ -1516,14 +1847,26 @@ function genCandidate() {
 
 function genDonorState() { return sampleCategorical(STATES, STATESprob); }
 
+const TOTAL_PAIRS = 20;
+
 let current = { a: null, b: null, donorState: null, locked: false };
 let pairIndex = 1;
+let results = [];
 
 function renderCandidate(cand, rowsEl, idEl) {
   idEl.textContent = 'CASE ' + cand.caseId;
   rowsEl.innerHTML = FIELDS.map(f => {
     const val = f.unit ? `${cand[f.key]} ${f.unit}` : `${cand[f.key]}`;
-    return `<div class="row"><span class="row-label">${f.label}</span><span class="row-value">${val}</span></div>`;
+    return `<div class="row">
+      <span class="row-label">
+        ${f.label}
+        <span class="info-icon" tabindex="0" aria-label="${f.label} info">
+          i
+          <span class="tooltip">${f.description}</span>
+        </span>
+      </span>
+      <span class="row-value">${val}</span>
+    </div>`;
   }).join('');
 }
 
@@ -1586,6 +1929,15 @@ async function submitChoice(side) {
 
   const allocationSide = determineAllocationConsistency();
 
+  results.push({
+    chosen: side,
+    allocationSide: allocationSide,
+    consistent: allocationSide === null ? null : allocationSide === side,
+    candidateA: { ...current.a },
+    candidateB: { ...current.b },
+    donorState: current.donorState
+  });
+
 const record = {
   timestamp: new Date().toISOString(),
 
@@ -1636,24 +1988,34 @@ try {
   console.error("Submission failed:", e);
 
 }
-  showFeedback(side);
 
-document.getElementById('nextPairBtn')
-  .addEventListener('click', () => {
+  refreshCount();
 
-    document.getElementById('feedbackScreen').style.display = 'none';
+  // Briefly show the selected/faded state before advancing so the
+  // participant sees their choice register, then move on.
+  setTimeout(advanceOrFinish, 350);
+}
 
+function advanceOrFinish() {
+  if (pairIndex >= TOTAL_PAIRS) {
+    showResultsSummary();
+  } else {
     pairIndex += 1;
     newPair();
-    refreshCount();
   }
-  , { once: true});
 }
 
 document.getElementById('cardA').addEventListener('click', () => submitChoice('A'));
 document.getElementById('cardB').addEventListener('click', () => submitChoice('B'));
 document.getElementById('skipBtn').addEventListener('click', () => {
-  pairIndex += 1;
+  advanceOrFinish();
+  refreshCount();
+});
+
+document.getElementById('nextPairBtn').addEventListener('click', () => {
+  document.getElementById('feedbackScreen').style.display = 'none';
+  pairIndex = 1;
+  results = [];
   newPair();
   refreshCount();
 });
