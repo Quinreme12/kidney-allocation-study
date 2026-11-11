@@ -499,6 +499,33 @@
   min-height: 16px;
 }
 
+.video-card {
+  max-width: 720px;
+}
+
+.video-placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-top: 24px;
+  background: var(--accent-soft);
+  border: 1px dashed var(--line);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.video-placeholder iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 4px;
+}
+
 .feedback-screen {
   position: fixed;
   inset: 0;
@@ -788,6 +815,9 @@
       <label for="occupationInput">Occupation</label>
       <select id="occupationInput">
         <option value="">Select an occupation</option>
+        <option value="Transplant Candidate">Transplant Candidate</option>
+        <option value="Transplant Recipient">Transplant Recipient</option>
+        <option value="Family of Transplant Recipient/Candidate">Family</option>
         <option value="Medical Student">Medical Student</option>
         <option value="Clinician">Clinician</option>
         <option value="Transplant Nephrologist">Transplant Nephrologist</option>
@@ -802,6 +832,33 @@
       <div id="gateError" class="gate-error"></div>
 
     </div>
+  </div>
+</div>
+
+<div id="videoScreen" class="gate-screen" style="display:none;">
+  <div class="gate-card video-card">
+    <div class="eyebrow">Introduction</div>
+
+    <h1>Before you begin</h1>
+
+    <p class="sub">
+      Please watch this short introduction to the study.
+    </p>
+
+    <div class="video-placeholder">
+      <!--
+        When the video is uploaded, replace the placeholder text below with:
+        <iframe src="https://www.youtube.com/embed/VIDEO_ID"
+                title="Study introduction"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowfullscreen></iframe>
+      -->
+      Video placeholder
+    </div>
+
+    <button id="videoContinueBtn" class="begin-button">
+      Continue to study
+    </button>
   </div>
 </div>
 
@@ -837,7 +894,7 @@
 
     <div class="sub feedback-disclaimer">
       <em>
-        Based on a simplified version of OPTN Allocation Policy as on 8/11/26, and under the assumption that donor KDPI = 50, and both candidates are blood type O and neither are highly sensitized or medically urgent, in each of the 20 comparisons.
+        Based on a simplified version of OPTN Allocation Policy 8.4.K (Table 8-9) as on 8/11/26, and under the assumption that donor KDPI = 50, and both candidates are blood type O and neither are medically urgent, in each of the 20 comparisons.
       </em>
     </div>
 
@@ -904,6 +961,12 @@ const FIELDS = [
     description: "The candidate's current age."
   },
   {
+    key: 'cpra',
+    label: 'Sensitization (cPRA)',
+    unit: '%',
+    description: 'The percentage of kidneys the candidate is sensitized to and is unable to accept. Higher scores means that the candidate may be less likely to receive another offer in the future'
+  },
+  {
     key: 'waitYears',
     label: 'Time on waiting list',
     unit: 'yrs',
@@ -925,7 +988,7 @@ const FIELDS = [
     key: 'state',
     label: 'State of residence',
     unit: '',
-    description: "The candidate's state of residence. Greater proximity reduces transport time, which is associated with a lower rejection risk"
+    description: "The candidate's state of residence. Greater proximity reduces transport time, which can help the kidney work better"
   },
   {
     key: 'priorLivingDonor',
@@ -1108,8 +1171,20 @@ function renderResultsList() {
 
 function getClassificationLabel(cls) {
   switch (cls) {
+    case 1: return 'CPRA 100%, 0-ABDR mismatch, within 250 NM';
+    case 2: return 'CPRA 100%, within 250 NM';
+    case 3: return 'CPRA 100%, 0-ABDR mismatch, national';
+    case 4: return 'CPRA 100%, national';
     case 5: return 'Prior living donor, within 250 NM';
+    case 7: return 'CPRA 99%, 0-ABDR mismatch, within 250 NM';
+    case 8: return 'CPRA 99%, within 250 NM';
+    case 9: return 'CPRA 98%, 0-ABDR mismatch, within 250 NM';
+    case 10: return 'CPRA 98%, within 250 NM';
     case 11: return '0-ABDR mismatch, within 250 NM';
+    case 12: return 'CPRA 80%+, 0-ABDR mismatch, national';
+    case 13: return 'CPRA 21-79%, under 18, 0-ABDR mismatch, national';
+    case 14: return 'CPRA 0-20%, under 18, 0-ABDR mismatch, national';
+    case 15: return 'CPRA 21-79%, 0-ABDR mismatch, national';
     case 28: return 'Within 250 NM';
     case 30: return 'National';
     default: return '';
@@ -1133,7 +1208,7 @@ function renderDetailColumn(side, r) {
   const totalPointsDisplay = Math.round(points.totalPoints * 10) / 10;
 
   const fieldRows = FIELDS.map(f => {
-    const val = f.unit ? `${cand[f.key]} ${f.unit}` : `${cand[f.key]}`;
+    const val = formatFieldValue(f, cand);
     return `<div class="detail-field-row"><span>${f.label}</span><span>${val}</span></div>`;
   }).join('');
 
@@ -1559,11 +1634,39 @@ function getDistancePoints(distance) {
 
 
 // ---------------------------------------------------------
+// Table 8-2: Points for CPRA (OPTN Policy 8.4)
+// ---------------------------------------------------------
+const CPRA_POINTS_TABLE = [
+  { min: 0,  max: 19,  points: 0 },
+  { min: 20, max: 29,  points: 0.08 },
+  { min: 30, max: 39,  points: 0.21 },
+  { min: 40, max: 49,  points: 0.34 },
+  { min: 50, max: 59,  points: 0.48 },
+  { min: 60, max: 69,  points: 0.81 },
+  { min: 70, max: 74,  points: 1.09 },
+  { min: 75, max: 79,  points: 1.58 },
+  { min: 80, max: 84,  points: 2.46 },
+  { min: 85, max: 89,  points: 4.05 },
+  { min: 90, max: 94,  points: 6.71 },
+  { min: 95, max: 95,  points: 10.82 },
+  { min: 96, max: 96,  points: 12.17 },
+  { min: 97, max: 97,  points: 17.30 },
+  { min: 98, max: 98,  points: 24.40 },
+  { min: 99, max: 99,  points: 50.09 },
+  { min: 100, max: 100, points: 202.10 }
+];
+
+function getCPRAPoints(cpra) {
+  const row = CPRA_POINTS_TABLE.find(r => cpra >= r.min && cpra <= r.max);
+  return row ? row.points : 0;
+}
+
+
+// ---------------------------------------------------------
 // Calculate the allocation points that apply to the
 // candidate.
 //
 // This intentionally leaves out:
-//   - CPRA points (everyone assumed CPRA 0)
 //   - EPTS
 //   - medical urgency
 //   - blood type
@@ -1600,6 +1703,10 @@ function getAllocationPoints(candidate, donorState) {
     hlaPoints = 1;
   }
 
+  // CPRA points (Table 8-2).
+  const cpraPoints =
+    getCPRAPoints(Number(candidate.cpra) || 0);
+
   const distancePoints =
     getDistancePoints(distance);
 
@@ -1607,6 +1714,7 @@ function getAllocationPoints(candidate, donorState) {
     waitingPoints +
     priorLivingDonorPoints +
     hlaPoints +
+    cpraPoints +
     distancePoints;
 
   return {
@@ -1614,19 +1722,38 @@ function getAllocationPoints(candidate, donorState) {
     waitingPoints: waitingPoints,
     priorLivingDonorPoints: priorLivingDonorPoints,
     hlaPoints: hlaPoints,
+    cpraPoints: cpraPoints,
     distancePoints: distancePoints,
     totalPoints: totalPoints
   };
 }
 
 
+// ---------------------------------------------------------
+// Allocation classification per OPTN Policy 8.4.K, Table 8-9
+// (deceased donor kidneys with KDPI 35% to 85%).
+//
+// Rules are checked in order, and the first match wins.
+// Lower classification number = higher priority.
+//
+// Assumptions for this study:
+//   - Donor and both candidates are blood type O, so "blood type
+//     identical or permissible" is always met.
+//   - Candidates are not medically urgent (Classification 6 not
+//     modeled), and no prior liver/heart/lung recipients
+//     (Classification 26 not modeled).
+//   - Blood type B classifications (16-20, 27, 29) do not apply.
+//   - "Less than 18 at time of match" uses the candidate's
+//     current age.
+// ---------------------------------------------------------
 function getAllocationClassification(candidate, donorState) {
 
   const distance =
     getCandidateDistanceNM(candidate, donorState);
 
-  const within250 =
-    distance <= 250;
+  const within250 = distance <= 250;
+
+  const cpra = Number(candidate.cpra) || 0;
 
   const zeroABDR =
     Number(candidate.hlaMismatch) === 0;
@@ -1634,58 +1761,63 @@ function getAllocationClassification(candidate, donorState) {
   const priorLivingDonor =
     candidate.priorLivingDonor === "Yes";
 
-  const pediatric =
-    candidate.listedAsChild === "Yes";
+  const underEighteen =
+    Number(candidate.age) < 18;
 
+  // Classification 1: 0-ABDR, CPRA 100%, within 250 NM
+  if (cpra === 100 && zeroABDR && within250) return 1;
 
-  // -------------------------------------------------------
-  // Classification 5
-  //
-  // Prior living donor
-  // Within 250 NM
-  // -------------------------------------------------------
-  if (priorLivingDonor && within250) {
-    return 5;
-  }
+  // Classification 2: CPRA 100%, within 250 NM
+  if (cpra === 100 && within250) return 2;
 
+  // Classification 3: 0-ABDR, CPRA 100%, nation
+  if (cpra === 100 && zeroABDR) return 3;
 
-  // -------------------------------------------------------
-  // Classification 11
-  //
-  // 0-ABDR mismatch
-  // Blood type identical/permissible
-  // Within 250 NM
-  //
-  // We are ignoring blood type.
-  // -------------------------------------------------------
-  if (zeroABDR && within250) {
-    return 11;
-  }
+  // Classification 4: CPRA 100%, nation
+  if (cpra === 100) return 4;
 
+  // Classification 5: prior living donor, within 250 NM
+  if (priorLivingDonor && within250) return 5;
 
+  // Classification 6 (medically urgent) is not modeled.
 
+  // Classification 7: 0-ABDR, CPRA 99%, within 250 NM
+  if (cpra === 99 && zeroABDR && within250) return 7;
 
+  // Classification 8: CPRA 99%, within 250 NM
+  if (cpra === 99 && within250) return 8;
 
-  // -------------------------------------------------------
-  // Classification 28
-  //
-  // All remaining candidates
-  // Within 250 NM
-  // -------------------------------------------------------
-  if (within250) {
-    return 28;
-  }
+  // Classification 9: 0-ABDR, CPRA 98%, within 250 NM
+  if (cpra === 98 && zeroABDR && within250) return 9;
 
+  // Classification 10: CPRA 98%, within 250 NM
+  if (cpra === 98 && within250) return 10;
 
-  // -------------------------------------------------------
-  // Classification 30
-  //
-  // All remaining candidates
-  // Nation
-  // -------------------------------------------------------
+  // Classification 11: 0-ABDR, within 250 NM
+  if (zeroABDR && within250) return 11;
+
+  // Classification 12: 0-ABDR, CPRA >= 80%, nation
+  if (zeroABDR && cpra >= 80) return 12;
+
+  // Classification 13: 0-ABDR, CPRA 21-79%, under 18, nation
+  if (zeroABDR && cpra >= 21 && cpra <= 79 && underEighteen) return 13;
+
+  // Classification 14: 0-ABDR, CPRA 0-20%, under 18, nation
+  if (zeroABDR && cpra <= 20 && underEighteen) return 14;
+
+  // Classification 15: 0-ABDR, CPRA 21-79%, nation
+  if (zeroABDR && cpra >= 21 && cpra <= 79) return 15;
+
+  // Classifications 16-20, 27, 29 (blood type B) do not apply.
+  // Classifications 21-25 are the "blood type permissible" versions
+  // of 11-15, which are already covered for blood type O candidates.
+
+  // Classification 28: all remaining candidates, within 250 NM
+  if (within250) return 28;
+
+  // Classification 30: all remaining candidates, nation
   return 30;
 }
-
 
 
 const STATES = [
@@ -1826,6 +1958,24 @@ const Dialyearcat = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 const Dialyearprob = [.3405, .1046, .1301, .1177, .0968, .0672, .0488, .0309, .0190, .0125,.0319 ]
 
 
+// PLACEHOLDER distribution of cPRA among waiting list candidates.
+// Replace these bucket probabilities with OPTN/SRTR waiting list data
+// when available. Each bucket is sampled as a uniform integer in its range.
+const CPRA_BUCKETS = [
+  { min: 0,  max: 0,   prob: .38 },
+  { min: 1,  max: 19,  prob: .27 },
+  { min: 20, max: 79,  prob: .24 },
+  { min: 80, max: 97,  prob: .09 },
+  { min: 98, max: 100, prob: .02 }
+];
+
+function genCPRA() {
+  const bucket =
+    sampleCategorical(CPRA_BUCKETS, CPRA_BUCKETS.map(b => b.prob))
+    ?? CPRA_BUCKETS[CPRA_BUCKETS.length - 1]; // guard against float rounding
+  return rand(bucket.min, bucket.max);
+}
+
 function genCandidate() {
   const age = sampleCategorical(agecat,ageprob);
   const waitYears = sampleCategorical(waitYearscat, waitYearsprob);
@@ -1839,6 +1989,7 @@ function genCandidate() {
     waitYears: waitYears,
     dialysisYears: Dialyear,
     hlaMismatch: hlaMismatches,
+    cpra: genCPRA(),
     state: Statesel,
     priorLivingDonor: randBool(0.05) ? 'Yes' : 'No',
     listedAsChild: ageAtListing < 18 ? 'Yes' : 'No',
@@ -1853,10 +2004,16 @@ let current = { a: null, b: null, donorState: null, locked: false };
 let pairIndex = 1;
 let results = [];
 
+function formatFieldValue(f, cand) {
+  const v = cand[f.key];
+  if (f.unit === '%') return `${v}%`;
+  return f.unit ? `${v} ${f.unit}` : `${v}`;
+}
+
 function renderCandidate(cand, rowsEl, idEl) {
   idEl.textContent = 'CASE ' + cand.caseId;
   rowsEl.innerHTML = FIELDS.map(f => {
-    const val = f.unit ? `${cand[f.key]} ${f.unit}` : `${cand[f.key]}`;
+    const val = formatFieldValue(f, cand);
     return `<div class="row">
       <span class="row-label">
         ${f.label}
@@ -2042,9 +2199,16 @@ document.getElementById('beginBtn').addEventListener('click', async () => {
   respondent.age = age;
   respondent.occupation = occupation;
 
-  // Hide the welcome screen first so the map has its
-  // correct visible dimensions.
+  // Move from the welcome screen to the introduction video.
   document.getElementById('gateScreen').style.display = 'none';
+  document.getElementById('videoScreen').style.display = 'flex';
+});
+
+document.getElementById('videoContinueBtn').addEventListener('click', async () => {
+
+  // Hide the video screen first so the map has its
+  // correct visible dimensions.
+  document.getElementById('videoScreen').style.display = 'none';
 
   // Generate the first pair.
   newPair();
